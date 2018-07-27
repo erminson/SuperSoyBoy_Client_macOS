@@ -1,16 +1,26 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class CameraLerpToTransform : MonoBehaviour {
+public class CameraLerpToTransform : MonoBehaviour
+{
+    public Transform camTarget;
+    public float trackingSpeed;
+    public float mixX;
+    public float mixY;
+    public float maxX;
+    public float maxY;
 
-	// Use this for initialization
-	void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
+    void FixedUpdate()
+    {
+        if (camTarget != null)
+        {
+            Vector2 newPos = Vector2.Lerp(transform.position, camTarget.transform.position, Time.deltaTime * trackingSpeed);
+            Vector3 camPosition = new Vector3(newPos.x, newPos.y, -10f);
+            Vector3 v3 = camPosition;
+
+            float clampX = Mathf.Clamp(v3.x, mixX, maxX);
+            float clampY = Mathf.Clamp(v3.y, mixY, maxY);
+
+            transform.position = new Vector3(clampX, clampY, -10f);
+        }
+    }
 }
