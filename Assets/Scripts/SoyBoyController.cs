@@ -3,12 +3,14 @@
 [RequireComponent(typeof(SpriteRenderer), typeof(Rigidbody2D))]
 public class SoyBoyController : MonoBehaviour
 {
-    public float jumpDurationThreshold = 10.25f;
+    public float jumpDurationThreshold = 0.25f;
     private float jumpDuration = 0f;
 
     public float speed = 14f;
     public float accel = 6f;
     public float airAccel = 3f;
+
+    public float jump = 14f;
 
     private Vector2 input;
     private SpriteRenderer spriteRenderer;
@@ -35,7 +37,9 @@ public class SoyBoyController : MonoBehaviour
     {
         input.x = Input.GetAxis("Horizontal");
         input.y = Input.GetAxis("Jump");
-        Debug.Log(input.y);
+
+        animator.SetFloat("Speed", Mathf.Abs(input.x));
+
         // Left & Right Move Control
         if (input.x > 0f)
         {
@@ -55,10 +59,12 @@ public class SoyBoyController : MonoBehaviour
         if (input.y >= 1f)
         {
             jumpDuration += Time.deltaTime;
+            animator.SetBool("IsJumping", true);
         }
-        else 
+        else
         {
             isJumping = false;
+            animator.SetBool("IsJumping", isJumping);
             jumpDuration = 0f;
         }
 
@@ -68,17 +74,20 @@ public class SoyBoyController : MonoBehaviour
             {
                 isJumping = true;
             }
+
+            animator.SetBool("IsOnWall", false);
         }
     }
 
     void FixedUpdate()
     {
         float xVelocity = 0f;
+        float yVelocity = 0f;
 
         float acceleration = 0f;
         if (PlayerIsOnGround())
         {
-            acceleration = accel;    
+            acceleration = accel;
         }
         else
         {
@@ -93,10 +102,36 @@ public class SoyBoyController : MonoBehaviour
         {
             xVelocity = body.velocity.x;
         }
-            
+
+        if (PlayerIsTouchingGroundOrWall() && Mathf.Approximately(input.y, 1f))
+        {
+            yVelocity = jump;
+        }
+        else
+        {
+            yVelocity = body.velocity.y;
+        }
+
         Vector2 force = new Vector2(((input.x * speed) - xVelocity) * acceleration, 0);
         body.AddForce(force);
-        body.velocity = new Vector2(xVelocity, body.velocity.y);
+        body.velocity = new Vector2(xVelocity, yVelocity);
+
+        if (PlayerIsWallToLeftOrRight() && !PlayerIsOnGround() && Mathf.Approximately(input.y, 1f))
+        {
+            body.velocity = new Vector2(-GetWallDirection() * speed * 0.75f, body.velocity.y);
+            animator.SetBool("IsOnWall", false);
+            animator.SetBool("IsJumping", true);
+        }
+        else if (!PlayerIsWallToLeftOrRight())
+        {
+            animator.SetBool("IsOnWall", false);
+            animator.SetBool("IsJumping", true);      
+        }
+
+        if (PlayerIsWallToLeftOrRight() && !PlayerIsOnGround())
+        {
+            animator.SetBool("IsOnWall", true);
+        }
 
         if (isJumping && jumpDuration < jumpDurationThreshold)
         {
@@ -121,5 +156,66 @@ public class SoyBoyController : MonoBehaviour
         }
 
         return false;
+    }
+
+
+    private bool PlayerIsLeftWall()
+    {
+        Vector2 origin = new Vector2(transform.position.x - width, transform.position.y);
+        bool isLeftWall = Physics2D.Raycast(origin, Vector2.left, rayCastLengthCheck);
+
+        if (isLeftWall)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool PlayerIsRightWall()
+    {
+        Vector2 origin = new Vector2(transform.position.x + width, transform.position.y);
+        bool isRightWall = Physics2D.Raycast(origin, Vector2.right, rayCastLengthCheck);
+
+        if (isRightWall)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    public bool PlayerIsWallToLeftOrRight()
+    {
+        if (PlayerIsLeftWall() || PlayerIsRightWall())
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    public bool PlayerIsTouchingGroundOrWall()
+    {
+        if (PlayerIsOnGround() || PlayerIsWallToLeftOrRight())
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    public int GetWallDirection()
+    {
+        if (PlayerIsLeftWall())
+        {
+            return -1;
+        }
+        else if (PlayerIsRightWall())
+        {
+            return 1;
+        }
+
+        return 0;
     }
 }
