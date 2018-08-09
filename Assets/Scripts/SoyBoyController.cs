@@ -3,6 +3,11 @@
 [RequireComponent(typeof(SpriteRenderer), typeof(Rigidbody2D))]
 public class SoyBoyController : MonoBehaviour
 {
+    public AudioClip runClip;
+    public AudioClip jumpClip;
+    public AudioClip slideClip;
+    private AudioSource audioSource;
+
     public float jumpDurationThreshold = 0.25f;
     private float jumpDuration = 0f;
 
@@ -25,6 +30,7 @@ public class SoyBoyController : MonoBehaviour
 
     void Awake()
     {
+        audioSource = GetComponent<AudioSource>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         body = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
@@ -73,9 +79,15 @@ public class SoyBoyController : MonoBehaviour
             if (input.y > 0)
             {
                 isJumping = true;
+                PlayAudioClip(jumpClip);
             }
 
             animator.SetBool("IsOnWall", false);
+
+            if (input.x < 0f || input.x > 0f)
+            {
+                PlayAudioClip(runClip);
+            }
         }
     }
 
@@ -121,6 +133,7 @@ public class SoyBoyController : MonoBehaviour
             body.velocity = new Vector2(-GetWallDirection() * speed * 0.75f, body.velocity.y);
             animator.SetBool("IsOnWall", false);
             animator.SetBool("IsJumping", true);
+            PlayAudioClip(jumpClip);
         }
         else if (!PlayerIsWallToLeftOrRight())
         {
@@ -131,6 +144,7 @@ public class SoyBoyController : MonoBehaviour
         if (PlayerIsWallToLeftOrRight() && !PlayerIsOnGround())
         {
             animator.SetBool("IsOnWall", true);
+            PlayAudioClip(slideClip);
         }
 
         if (isJumping && jumpDuration < jumpDurationThreshold)
@@ -217,5 +231,16 @@ public class SoyBoyController : MonoBehaviour
         }
 
         return 0;
+    }
+
+    private void PlayAudioClip(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+        {
+            if (!audioSource.isPlaying)
+            {
+                audioSource.PlayOneShot(clip);    
+            }
+        }
     }
 }

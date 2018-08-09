@@ -17,13 +17,8 @@ public class Hazard : MonoBehaviour
 
 	private void OnCollisionEnter2D(Collision2D collision)
 	{
-
-        Debug.Log("collision.transform.tag1:" + collision.transform.tag);
-        Debug.Log("collision.gameObject.tag1:" + collision.gameObject.tag);
         if (collision.transform.tag == "Player")
         {
-            Debug.Log("collision.transform.tag2:" + collision.transform.tag);
-            Debug.Log("collision.gameObject.tag2:" + collision.gameObject.tag);
             if (audioSource != null && deathClip != null)
             {
                 audioSource.PlayOneShot(deathClip);
@@ -33,6 +28,7 @@ public class Hazard : MonoBehaviour
             spriteRenderer.sprite = hitSprite;
 
             Destroy(collision.gameObject);
+            GameManager.Instance.RestartLevel(1.25f);
         }
 	}
 }
